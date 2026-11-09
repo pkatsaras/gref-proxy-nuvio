@@ -7,7 +7,7 @@ app = FastAPI()
 TARGET_BASE = "https://7043eb19dc52-greflix.baby-beamup.club"
 
 @app.api_route("/{path_name:path}", methods=["GET", "POST", "PUT", "DELETE"])
-async def proxy(request: Request, path_name: path):
+async def proxy(request: Request, path_name: str):
     async with httpx.AsyncClient(timeout=30.0) as client:
         url = f"{TARGET_BASE}/{path_name}"
         if request.url.query:
