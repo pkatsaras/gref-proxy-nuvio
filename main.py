@@ -1,5 +1,3 @@
-python
-
 from fastapi import FastAPI, Request
 import httpx
 
