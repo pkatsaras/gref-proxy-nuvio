@@ -10,19 +10,22 @@ async def proxy(request: Request, path_name: str):
         url = f"{TARGET_BASE}/{path_name}"
         if request.url.query:
             url += f"?{request.url.query}"
-
+        
         response = await client.request(
             method=request.method,
             url=url,
             headers={k: v for k, v in request.headers.items() if k.lower() != 'host'}
         )
-
+        
+        content = response.content
         try:
             data = response.json()
-            if "meta" in data and "videos" in data["meta"]:
-                for video in data["meta"]["videos"]:
-                    if "episode" in video and isinstance(video["episode"], float):
-                        video["episode"] = int(video["episode"])
+            if isinstance(data, dict):
+                if "meta" in data and isinstance(data["meta"], dict) and "videos" in data["meta"]:
+                    for video in data["meta"]["videos"]:
+                        if "episode" in video and isinstance(video["episode"], float):
+                            video["episode"] = int(video["episode"])
             return data
-        except:
-            return response.content
+        except Exception:
+            return {"error": False, "message": content.decode("utf-8", errors="ignore")}
+
