@@ -20,12 +20,20 @@ async def proxy(request: Request, path_name: str):
         content = response.content
         try:
             data = response.json()
-            if isinstance(data, dict):
-                if "meta" in data and isinstance(data["meta"], dict) and "videos" in data["meta"]:
-                    for video in data["meta"]["videos"]:
-                        if "episode" in video and isinstance(video["episode"], float):
-                            video["episode"] = int(video["episode"])
+            
+            # Διορθώνουμε αναδρομικά τυχόν δεκαδικά επεισόδια παντού
+            def fix_episodes(obj):
+                if isinstance(obj, dict):
+                    for k, v in obj.items():
+                        if k == "episode" and isinstance(v, float):
+                            obj[k] = int(v)
+                        else:
+                            fix_episodes(v)
+                elif isinstance(obj, list):
+                    for item in obj:
+                        fix_episodes(item)
+            
+            fix_episodes(data)
             return data
         except Exception:
             return {"error": False, "message": content.decode("utf-8", errors="ignore")}
-
