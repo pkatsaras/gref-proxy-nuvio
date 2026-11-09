@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Response
 import httpx
 
 app = FastAPI()
@@ -6,15 +6,17 @@ TARGET_BASE = "https://7043eb19dc52-greflix.baby-beamup.club"
 
 @app.api_route("/{path_name:path}", methods=["GET", "POST", "PUT", "DELETE"])
 async def proxy(request: Request, path_name: str):
-    async with httpx.AsyncClient(timeout=30.0) as client:
+    async with httpx.AsyncClient(timeout=30.0, follow_redirects=True) as client:
         url = f"{TARGET_BASE}/{path_name}"
         if request.url.query:
             url += f"?{request.url.query}"
         
+        headers = {k: v for k, v in request.headers.items() if k.lower() not in ['host', 'accept-encoding']}
+        
         response = await client.request(
             method=request.method,
             url=url,
-            headers={k: v for k, v in request.headers.items() if k.lower() != 'host'}
+            headers=headers
         )
         
         content = response.content
@@ -36,4 +38,4 @@ async def proxy(request: Request, path_name: str):
             fix_episodes(data)
             return data
         except Exception:
-            return {"error": False, "message": content.decode("utf-8", errors="ignore")}
+            return Response(content=response.content, status_code=response.status_code, headers=dict(response.headers))
